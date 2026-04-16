@@ -77,7 +77,17 @@ def test_format_message_lost_followees():
     assert "user3" in format_message(lost_followers, lost_followees)
 
 
-def test_save_and_load(tmp_path):
+def test_save_and_load_list(tmp_path):
+    path = tmp_path / "test.json"
+    content = ["user1", "user2", "user3"]
+
+    save(path, content)
+    loaded_content = load(path)
+
+    assert loaded_content == content
+
+
+def test_save_and_load_set(tmp_path):
     path = tmp_path / "test.json"
     content = {"user1", "user2", "user3"}
 
