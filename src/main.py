@@ -86,4 +86,4 @@ def main(two_factor_code):
 
 if __name__ == "__main__":
     print("Running veilleur...")
-    main(sys.argv[1])
+    main(sys.argv[1] if len(sys.argv) > 1 else None)
