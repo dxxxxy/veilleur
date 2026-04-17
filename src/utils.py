@@ -45,7 +45,7 @@ def send_sms(content):
     auth_token = os.getenv('TWILIO_AUTH_TOKEN')
 
     if not account_sid or not auth_token:
-        print("Twilio credentials not set in environment variables. Skipping SMS notification.")
+        print("Twilio credentials not set in environment variables. Skipping SMS notification. Please set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN.")
         return False
 
     client = Client(account_sid, auth_token)
@@ -55,7 +55,7 @@ def send_sms(content):
     to_phone = os.getenv('TWILIO_TO_PHONE')
 
     if not from_phone or not to_phone:
-        print("Twilio phone numbers not set in environment variables. Skipping SMS notification.")
+        print("Twilio phone numbers not set in environment variables. Skipping SMS notification. Please set TWILIO_FROM_PHONE and TWILIO_TO_PHONE.")
         return False
 
     # send the message

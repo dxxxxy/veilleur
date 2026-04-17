@@ -1,29 +1,57 @@
+import os
+import sys
+
 import instaloader
 from dotenv import load_dotenv
-from instaloader import Profile
+from instaloader import Profile, TwoFactorAuthRequiredException
 
 from src.utils import compute_lost, format_message, load, save, send_sms
 
 
-def main():
+def main(two_factor_code):
     # load environment variables from .env file
     load_dotenv()
 
     # initialize instaloader
     insta = instaloader.Instaloader()
 
-    # enter username
-    username = input("Enter Instagram username: ")
+    # get instagram credentials from environment variables
+    username = os.getenv("INSTAGRAM_USERNAME")
+    password = os.getenv("INSTAGRAM_PASSWORD")
+
+    if not username or not password:
+        print(
+            "Instagram credentials not set in environment variables. Please set INSTAGRAM_USERNAME and INSTAGRAM_PASSWORD.")
+        return
 
     # load session if it exists, otherwise do interactive login and save session for future use
     try:
-        insta.load_session_from_file(username, "session")
+        insta.load_session_from_file(username, f"session_{username}")
     except FileNotFoundError:
-        insta.interactive_login(username)
-        insta.save_session_to_file("session")
+        try:
+            insta.login(username, password)
+        except TwoFactorAuthRequiredException:
+            if not two_factor_code:
+                print(
+                    "Two-factor authentication is enabled for this account. Please provide the two-factor authentication code as a command-line argument.")
+                return
 
-    # get your own profile
-    profile = Profile.own_profile(insta.context)
+            try:
+                insta.two_factor_login(two_factor_code)
+            except Exception as e:
+                print(f"Two-factor authentication failed: {e}")
+                return
+
+        insta.save_session_to_file(f"session_{username}")
+
+    # get profile
+    profile_id = os.getenv("INSTAGRAM_PROFILE_ID")
+
+    if not profile_id:
+        print("Instagram profile ID not set in environment variables. Using own profile. Please set INSTAGRAM_PROFILE_ID.")
+        profile = Profile.own_profile(insta.context)
+    else:
+        profile = Profile.from_username(insta.context, profile_id)
 
     # who follows you
     follower_ids = set([follower.userid for follower in profile.get_followers()])
@@ -32,8 +60,8 @@ def main():
     followee_ids = set([followee.userid for followee in profile.get_followees()])
 
     # read previous followers and followees from files
-    previous_follower_ids = set(load("followers.json"))
-    previous_followee_ids = set(load("followees.json"))
+    previous_follower_ids = set(load(f"followers_{profile_id}.json"))
+    previous_followee_ids = set(load(f"followees_{profile_id}.json"))
 
     # if we have all data required for comparison, continue
     if previous_follower_ids and previous_followee_ids:
@@ -52,9 +80,10 @@ def main():
             print("No lost followers or followees since last check.")
 
     # update current followers and followees
-    save("followers.json", follower_ids)
-    save("followees.json", followee_ids)
+    save(f"followers_{profile_id}.json", follower_ids)
+    save(f"followees_{profile_id}.json", followee_ids)
 
 
 if __name__ == "__main__":
-    main()
+    print("Running veilleur...")
+    main(sys.argv[1])
