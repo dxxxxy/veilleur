@@ -44,6 +44,9 @@ def main(two_factor_code):
 
         insta.save_session_to_file(f"session_{username}")
 
+    print(Profile.own_profile(insta.context).get_followees().first_item)
+    return
+
     # get profile
     profile_username = os.getenv("INSTAGRAM_PROFILE_USERNAME")
 
@@ -52,10 +55,7 @@ def main(two_factor_code):
             "Instagram profile username not set in environment variables. Using own profile. Please set INSTAGRAM_PROFILE_USERNAME.")
         profile = Profile.own_profile(insta.context)
     else:
-        try:
-            profile = Profile.from_username(insta.context, profile_username)
-        except ProfileNotExistsException:
-            profile = insta.check_profile_id(profile_username)
+        profile = Profile.from_username(insta.context, profile_username)
 
     # who follows you
     follower_ids = set([follower.userid for follower in profile.get_followers()])
