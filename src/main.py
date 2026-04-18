@@ -3,7 +3,7 @@ import sys
 
 import instaloader
 from dotenv import load_dotenv
-from instaloader import Profile, TwoFactorAuthRequiredException, ProfileNotExistsException
+from instaloader import Profile, TwoFactorAuthRequiredException
 
 from src.utils import compute_lost, format_message, load, save, send_sms
 
@@ -44,7 +44,14 @@ def main(two_factor_code):
 
         insta.save_session_to_file(f"session_{username}")
 
-    print(Profile.own_profile(insta.context).get_followees().first_item)
+    try:
+        print(Profile.own_profile(insta.context).get_followees().first_item)
+    except ConnectionError:
+        try:
+            os.remove(f"session_{username}")
+        except OSError:
+            pass
+
     return
 
     # get profile
