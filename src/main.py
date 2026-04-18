@@ -3,7 +3,7 @@ import sys
 
 import instaloader
 from dotenv import load_dotenv
-from instaloader import Profile, TwoFactorAuthRequiredException
+from instaloader import Profile, TwoFactorAuthRequiredException, ProfileNotExistsException
 
 from src.utils import compute_lost, format_message, load, save, send_sms
 
@@ -45,13 +45,17 @@ def main(two_factor_code):
         insta.save_session_to_file(f"session_{username}")
 
     # get profile
-    profile_id = os.getenv("INSTAGRAM_PROFILE_ID")
+    profile_username = os.getenv("INSTAGRAM_PROFILE_USERNAME")
 
-    if not profile_id:
-        print("Instagram profile ID not set in environment variables. Using own profile. Please set INSTAGRAM_PROFILE_ID.")
+    if not profile_username:
+        print(
+            "Instagram profile username not set in environment variables. Using own profile. Please set INSTAGRAM_PROFILE_USERNAME.")
         profile = Profile.own_profile(insta.context)
     else:
-        profile = Profile.from_username(insta.context, profile_id)
+        try:
+            profile = Profile.from_username(insta.context, profile_username)
+        except ProfileNotExistsException:
+            profile = insta.check_profile_id(profile_username)
 
     # who follows you
     follower_ids = set([follower.userid for follower in profile.get_followers()])
@@ -60,8 +64,8 @@ def main(two_factor_code):
     followee_ids = set([followee.userid for followee in profile.get_followees()])
 
     # read previous followers and followees from files
-    previous_follower_ids = set(load(f"followers_{profile_id}.json"))
-    previous_followee_ids = set(load(f"followees_{profile_id}.json"))
+    previous_follower_ids = set(load(f"followers_{profile_username}.json"))
+    previous_followee_ids = set(load(f"followees_{profile_username}.json"))
 
     # if we have all data required for comparison, continue
     if previous_follower_ids and previous_followee_ids:
@@ -80,8 +84,8 @@ def main(two_factor_code):
             print("No lost followers or followees since last check.")
 
     # update current followers and followees
-    save(f"followers_{profile_id}.json", follower_ids)
-    save(f"followees_{profile_id}.json", followee_ids)
+    save(f"followers_{profile_username}.json", follower_ids)
+    save(f"followees_{profile_username}.json", followee_ids)
 
 
 if __name__ == "__main__":
