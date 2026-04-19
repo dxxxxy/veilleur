@@ -44,16 +44,6 @@ def main(two_factor_code):
 
         insta.save_session_to_file(f"session_{username}")
 
-    try:
-        print(Profile.own_profile(insta.context).get_followees().first_item)
-    except Exception:
-        try:
-            os.remove(f"session_{username}")
-        except OSError:
-            pass
-
-    return
-
     # get profile
     profile_username = os.getenv("INSTAGRAM_PROFILE_USERNAME")
 
