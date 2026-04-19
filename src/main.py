@@ -46,7 +46,7 @@ def main(two_factor_code):
 
     try:
         print(Profile.own_profile(insta.context).get_followees().first_item)
-    except ConnectionError:
+    except Exception:
         try:
             os.remove(f"session_{username}")
         except OSError:
